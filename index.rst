@@ -174,21 +174,25 @@ The task is to make GHC aware of two databases: plugin and target. Loading a
 plugin would be done via the plugin database and plugin would always be executed
 with the internal interpreter.
 
-Currently GHC is able to compile its own plugins in confined mode. In
-particular, it supports loading plugins from the "home package" (the set of
-modules it is currently compiling). While GHC isn't multi-target, it won't be
-able to build its own plugins. Cross-compilers such as GHCJS or Asterius relies
-on two GHCs: one for the real target and one which targets the compiler host
-(the latter is also used to build Cabal's Setup.hs files which are run on the
-compiler host too).
+Breaking change: currently GHC is able to compile its own plugins in confined
+mode. In particular, it supports loading plugins from the "home package" (the
+set of modules it is currently compiling). While GHC isn't multi-target, it
+won't be able to build its own plugins. Cross-compilers such as GHCJS or
+Asterius relies on two GHCs: one for the real target and one which targets the
+compiler host (the latter is also used to build Cabal's Setup.hs files which are
+run on the compiler host too).
 
 Make GHC multi-target
 ---------------------
 
 GHC should be able to produce code objects for at least 2 targets:
 
-- its own host platform and compiler way (for plugins)
+- its own host platform and compiler way (for plugins): `-target self`
 - one or more other targets
+
+We need a way to configure two toolchains (gcc, llvm, as, ld, ar, strip, etc.):
+one for GHC plugins and another for the current target.
+
 
 Make iserv program reinstallable
 --------------------------------
@@ -274,3 +278,43 @@ Related: an alternative `proposal
 interpreting TH (target) code with a Core interpreter. However TH code may
 invoke native functions which would be different depending on the target. We
 really ought to execute/interpret GHC host code in all cases.
+
+Cabal: Setup.hs
+---------------
+
+Cabal packages are built by a `Setup.hs` program running on the compiler host.
+Most of them use the same "Simple" on but other use custom `Setup.hs`, with
+dependencies specified in the `.cabal` files, etc.
+
+Once GHC becomes multi-target, Stack and cabal-install could use `-target self`
+to produce the actual program for the compiler host. It would ensure that the
+compiler and `Setup` would use the same boot libraries.
+
+Currently cross-compilers such as GHCJS and Asterius use two GHC compilers: one
+for the target and another for the host (used to build the former, the plugins
+and `Setup.hs` programs).
+
+Cabal: `configure` build-type
+-----------------------------
+
+Some Cabal packages use `build-type: configure` (see the `user manual
+<https://www.haskell.org/cabal/users-guide/developing-packages.html#system-dependent-parameters>`_).
+During the configuration phase, the package description is modified by a
+`configure` script producing a `buildinfo` file.
+
+This only works on Unix-like systems and without additional parameters it
+assumes that the target is the host.
+
+Portable packages (in particular boot libraries) shouldn't use this. They might
+call `configure` in custom `Setup.hs` on Unix-like platforms though, passing it
+flags to specify the actual target if necessary.
+
+
+Remove platform CPP
+-------------------
+
+GHC should expose a virtual package (like `ghc-prim`) with target information
+(e.g. word size, endianness) as values/types instead of using CPP to include
+`MachDeps.h`.
+
+Expressions using these values would be simplified in Core.
