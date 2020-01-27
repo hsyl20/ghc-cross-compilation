@@ -130,9 +130,9 @@ internal to the `iserv` process and GHC isn't aware of it).
 
 Using the external interpreter to execute Template Haskell code doesn't really
 make sense: TH code is similar to plugin code in that it has access to some
-compiler internals (`Names`, etc.) and can modify the syntax tree. Morally it
-should be built so that it can be linked with the compiler and executed on the
-host.
+compiler internals (`Names`, etc.), it can modify the syntax tree and it can
+perform IO (read files, etc.). Morally it should be built so that it can be
+linked with the compiler and executed on the host.
 
 Compiler plugins don't work at all with the external interpreter (see `#14335
 <https://gitlab.haskell.org/ghc/ghc/issues/14335>`_). It is because they
@@ -149,3 +149,128 @@ External interpreter links:
 
 * https://gitlab.haskell.org/ghc/ghc/wikis/commentary/compiler/external-interpreter
 * https://gitlab.haskell.org/ghc/ghc/wikis/remote-GHCi
+
+
+
+Tasks
+=====
+
+Separate plugin packages/modules from target packages/modules
+-------------------------------------------------------------
+
+Currently GHC only considers one set of packages/modules: those for the target.
+This is a problem because compiler plugins have to be compatible with GHC (same
+way, same platform, etc.) but compiler plugins are looked for in target
+packages/modules.
+
+GHCJS `uses a hack
+<https://github.com/ghcjs/ghcjs/blob/e87195eaa2bc7e320e18cf10386802bc90b7c874/src/Compiler/Plugins.hs#L2>`_ to
+support plugins while its target is JavaScript code:
+- the plugin still needs to exists amongst the target modules
+- when loading a plugin module, instead of loading the plugin from the target
+  database, it tries to find a matching module in the host database
+
+The task is to make GHC aware of two databases: plugin and target. Loading a
+plugin would be done via the plugin database and plugin would always be executed
+with the internal interpreter.
+
+Currently GHC is able to compile its own plugins in confined mode. In
+particular, it supports loading plugins from the "home package" (the set of
+modules it is currently compiling). While GHC isn't multi-target, it won't be
+able to build its own plugins. Cross-compilers such as GHCJS or Asterius relies
+on two GHCs: one for the real target and one which targets the compiler host
+(the latter is also used to build Cabal's Setup.hs files which are run on the
+compiler host too).
+
+Make GHC multi-target
+---------------------
+
+GHC should be able to produce code objects for at least 2 targets:
+
+- its own host platform and compiler way (for plugins)
+- one or more other targets
+
+Make iserv program reinstallable
+--------------------------------
+
+Allow on-the-fly build of the iserv program. Depending on the selected target,
+GHC should build an iserv program executing on the host (but not necessarily
+with the same way as the compiler) that can execute target code.
+
+GHC distributions wouldn't have to provide several `iserv` programs for every
+target. They could be downloaded from Hackage and built for the host (now that
+GHC would be multi-target).
+
+Related issue: https://gitlab.haskell.org/ghc/ghc/issues/12218
+
+Make boot libraries reinstallable
+---------------------------------
+
+GHC should be able to rebuild its boot libraries with different flags. Similarly
+to iserv programs, GHC distributions shouldn't have to provide boot libraries
+for every target (in addition to the boot libraries used by the compiler).
+
+As plugin packages/modules would be separate from target packages/modules,
+downloading boot libraries from Hackage and compiling them for the target
+wouldn't impact plugin packages/modules.
+
+Make GHC and the RTS reinstallable
+----------------------------------
+
+We also want GHC itself and the RTS to be reinstallable.
+
+We should be able to specify the RTS package to use.
+
+Blend ways into targets
+-----------------------
+
+Compiling for different compiler ways should be like cross-compiling for
+different platforms. Compiler ways should be transformed into package flags for
+the RTS and those flags should be stored into ABI hashes in installed packages
+to avoid mismatching incompatible code objects.
+
+These should be generic enough to allow different RTS options depending on the
+selected RTS (e.g. native RTS should have flags equivalent to RTS ways,
+Asterius/GHCJS RTS should have flags to select between NodeJS or browser targets
+and to select features to enable).
+
+
+Fix Template Haskell stage hygiene
+----------------------------------
+
+Currently Template Haskell mixes up stages because it assumes that the confined
+mode is used.
+
+We should be able to specify/detect if an `import` is for a top-level TH splice
+or not.
+
+We should remove `Lift` instances for target dependent types (e.g. `Word`,
+`Int`, linux only types, etc.).
+
+Related:
+
+- see `this proposal <https://github.com/ghc-proposals/ghc-proposals/pull/243>`_
+- `blog post
+  <http://blog.ezyang.com/2016/07/what-template-haskell-gets-wrong-and-racket-gets-right/>`_
+
+
+Don't use the external interpreter for Template Haskell
+-------------------------------------------------------
+
+Template Haskell code shouldn't be executed by the external interpreter but
+similarly to plugins.
+
+It should have dynamic access (i.e. not via CPP) to the target platform
+properties (word size, endianness, etc.).
+
+We should provide a way to query some stuff about the target code via the
+external interpreter: e.g. `sizeOf (undefined :: MyStruct)`.
+
+It should enhance speed as TH code is often used to perform syntactic
+transformations (e.g.  `makeLenses`) which don't require target code evaluation.
+
+Related: an alternative `proposal
+<https://github.com/ghc-proposals/ghc-proposals/issues/162>`_ consists in
+interpreting TH (target) code with a Core interpreter. However TH code may
+invoke native functions which would be different depending on the target. We
+really ought to execute/interpret GHC host code in all cases.
