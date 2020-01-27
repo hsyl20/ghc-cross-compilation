@@ -225,6 +225,8 @@ We also want GHC itself and the RTS to be reinstallable.
 
 We should be able to specify the RTS package to use.
 
+Related: https://gitlab.haskell.org/ghc/ghc/merge_requests/490
+
 Blend ways into targets
 -----------------------
 
