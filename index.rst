@@ -92,16 +92,60 @@ If the selected way is not the same as the one used to build GHC and its boot
 libraries, it breaks the confined mode assumptions: the produced objects can't
 be dynamically linked with GHC.
 
-GHC could build objects both for itself (i.e. using the way it has been built
-with) and for the selected target way. By doing this, it could simulate the
+GHC can build objects both for itself (i.e. using the way it has been built
+with) and for the selected target way. By doing this, it can simulate the
 confined mode by loading objects on the host that are different from the objects
 produced for the target, with the hope that the two ways have no observable
-difference. [I don't know if GHC does this. To check]
+difference. Quoting the `wiki
+<https://gitlab.haskell.org/ghc/ghc/wikis/remote-GHCi>`_: "The way this is done
+currently is inherently unsafe, because we use the profiled .hi files with the
+unprofiled object files, and hope that the two are in sync."
 
-Another solution is to use the external interpreter.
+Another solution is to use an external interpreter.
+
 
 Breach #3: external interpreter
 -------------------------------
 
-https://gitlab.haskell.org/ghc/ghc/wikis/commentary/compiler/external-interpreter
-https://gitlab.haskell.org/ghc/ghc/wikis/remote-GHCi
+The idea behind the external interpreter is to delegate the execution of the
+target code to another process (called `iserv`). This process can then delegate
+to another one hosted on another platform or in a VM (e.g. NodeJS), etc.. 
+
+GHC performs two-way communication with this process to send ByteCode to
+evaluate, to ask for package to be linked, etc. During code execution, the
+`iserv` process may query the host GHC (e.g. when Template Haskell code is run,
+it may query information about some `Names` and these information lives in the
+host GHC).
+
+GHC spawns a different `iserv` process depending on the selected target way:
+`ghc-iserv-prof`, `ghc-iserv-dyn`, etc. This allows the `iserv` process to load
+target object codes built which have not been built with the same way as GHC.
+
+A different external interpreter can be specified with the `-pgmi` command-line
+option.
+
+Using the external interpreter in GHCi makes sense because it allows the
+execution of the code produced for the target on the host (or remotely but it is
+internal to the `iserv` process and GHC isn't aware of it).
+
+Using the external interpreter to execute Template Haskell code doesn't really
+make sense: TH code is similar to plugin code in that it has access to some
+compiler internals (`Names`, etc.) and can modify the syntax tree. Morally it
+should be built so that it can be linked with the compiler and executed on the
+host.
+
+Compiler plugins don't work at all with the external interpreter (see `#14335
+<https://gitlab.haskell.org/ghc/ghc/issues/14335>`_). It is because they
+directly depend on the `ghc` package and assume they are going to be linked with
+it. Executing compiler plugins in the external interpreter would mean that the
+communication protocol between iserv and GHC would need to be extended to
+support everything a compiler plugin can do. As compiler plugins can do
+virtually anything in the compiler, it would mean that most GHC datatypes would
+need to be serializable, most functions explicitly exposed, etc. Moreover we
+would have to deal with the discrepancy between host and target datatypes (word
+size, etc.). It probably won't happen.
+
+External interpreter links:
+
+* https://gitlab.haskell.org/ghc/ghc/wikis/commentary/compiler/external-interpreter
+* https://gitlab.haskell.org/ghc/ghc/wikis/remote-GHCi
