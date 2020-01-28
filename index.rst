@@ -4,7 +4,9 @@ Cross-compilation with GHC
 Wouldn't it be awesome if GHC was able to cross-compile Haskell code to
 WebAssembly, JavaScript, Java bytecode, etc.? Sadly it can't be done directly
 with stock GHC. Several glorious attempts at doing cross-compilation (e.g.
-GHCJS, Asterius) are based on GHC forks and rely on less glorious hacks to work.
+`GHCJS <https://github.com/ghcjs/ghcjs>`_, `Asterius
+<https://github.com/tweag/asterius/>`_, `Eta <eta-lang.org>`_) are based on GHC
+forks and rely on less glorious hacks to work.
 
 This document explains why cross-compiling Haskell code with GHC is so
 difficult. It also describes what would need to be done to make GHC an effective
@@ -276,11 +278,17 @@ external interpreter: e.g. `sizeOf (undefined :: MyStruct)`.
 It should enhance speed as TH code is often used to perform syntactic
 transformations (e.g.  `makeLenses`) which don't require target code evaluation.
 
-Related: an alternative `proposal
+Related:
+
+- an alternative `proposal
 <https://github.com/ghc-proposals/ghc-proposals/issues/162>`_ consists in
 interpreting TH (target) code with a Core interpreter. However TH code may
 invoke native functions which would be different depending on the target. We
 really ought to execute TH code compiled for the GHC host in all cases.
+
+- an STG interpreter could be used too (e.g. `ministg
+  <http://hackage.haskell.org/package/ministg>`_)
+
 
 Cabal: Setup.hs
 ---------------
