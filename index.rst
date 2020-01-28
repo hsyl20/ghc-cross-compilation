@@ -18,12 +18,13 @@ or send me an email (sylvain@haskus.fr).
 Confined mode
 -------------
 
-Historically GHC has been designed with the hypothesis the code it produces is
-to be run on the same platform as the compiler itself. Even more than that, the
-code objects it produces (`.o`, `.a`, `.so`, `.dll`, etc.) must be compatible
-with the code objects used to build the compiler itself: boot libraries
-(`bytestring`, `base` and all the others in the `libraries` directory in GHC's
-source tree) and the compiler itself if the produced code uses the GHC API.
+Historically GHC has been designed with the hypothesis that the code it produces
+is to be run on the same platform as the compiler itself. Even more than that,
+the code objects it produces (``.o``, ``.a``, ``.so``, ``.dll``, etc.) must be
+compatible with the code objects used to build the compiler itself: boot
+libraries (``bytestring``, ``base`` and all the others in the ``libraries`` directory
+in GHC's source tree) and the compiler itself if the produced code uses the GHC
+API.
 
 To refer to this mode I will use the expression **confined mode**.
 
@@ -75,15 +76,15 @@ it can produce objects that:
 - use the multi-threaded runtime system or not
 - support profiling or not
 - use additional debug assertions or not
-- use different heap object representation (e.g. `tables_next_to_code`)
+- use different heap object representation (e.g. ``tables_next_to_code``)
 - support dynamic linking or not
 
 These options are called "compiler ways". Some of them can be combined (e.g.
 threaded + debugging).
 
 Depending on the selected way, the compiler produces and links appropriate
-objects together. These objects are identified by a suffix: e.g. `*.p_o` for an
-object built with profiling enabled; `*.thr_debug_p.a` for an archive built with
+objects together. These objects are identified by a suffix: e.g. ``*.p_o`` for an
+object built with profiling enabled; ``*.thr_debug_p.a`` for an archive built with
 multi-threading, debugging, and profiling enabled. See the gory details on the
 `wiki <https://gitlab.haskell.org/ghc/ghc/wikis/commentary/rts/compiler-ways>`_.
 
@@ -110,29 +111,29 @@ Breach #3: external interpreter
 -------------------------------
 
 The idea behind the external interpreter is to delegate the execution of the
-target code to another process (called `iserv`). This process can then delegate
+target code to another process (called ``iserv``). This process can then delegate
 to another one hosted on another platform or in a VM (e.g. NodeJS), etc.. 
 
 GHC performs two-way communication with this process to send ByteCode to
 evaluate, to ask for package to be linked, etc. During code execution, the
-`iserv` process may query the host GHC (e.g. when Template Haskell code is run,
-it may query information about some `Names` and these information live in the
+``iserv`` process may query the host GHC (e.g. when Template Haskell code is run,
+it may query information about some ``Names`` and these information live in the
 host GHC).
 
-GHC spawns a different `iserv` process depending on the selected target way:
-`ghc-iserv-prof`, `ghc-iserv-dyn`, etc. This allows the `iserv` process to load
+GHC spawns a different ``iserv`` process depending on the selected target way:
+``ghc-iserv-prof``, ``ghc-iserv-dyn``, etc. This allows the ``iserv`` process to load
 target object codes built which have not been built with the same way as GHC.
 
-A different external interpreter can be specified with the `-pgmi` command-line
+A different external interpreter can be specified with the ``-pgmi`` command-line
 option.
 
 1. Using the external interpreter in GHCi makes sense because it allows the
 execution of the code produced for the target on the host (or remotely but it is
-internal to the `iserv` process and GHC isn't aware of it).
+internal to the ``iserv`` process and GHC isn't aware of it).
 
 2. Using the external interpreter to execute Template Haskell code doesn't really
 make sense: TH code is similar to plugin code in that it has access to some
-compiler internals (`Names`, etc.), it can modify the syntax tree and it can
+compiler internals (``Names``, etc.), it can modify the syntax tree and it can
 perform IO (read files, etc.). Morally it should be built so that it can be
 linked with the compiler and executed on the host.
 
@@ -190,7 +191,7 @@ Make GHC multi-target
 
 GHC should be able to produce code objects for at least 2 targets:
 
-- its own host platform and compiler way (for plugins): `-target self`
+- its own host platform and compiler way (for plugins): ``-target self``
 - one or more other targets
 
 We need a way to configure two toolchains (gcc, llvm, as, ld, ar, strip, etc.):
@@ -204,7 +205,7 @@ Allow on-the-fly build of the iserv program. Depending on the selected target,
 GHC should build an iserv program executing on the host (but not necessarily
 with the same way as the compiler) that can execute target code.
 
-GHC distributions wouldn't have to provide several `iserv` programs for every
+GHC distributions wouldn't have to provide several ``iserv`` programs for every
 target. They could be downloaded from Hackage and built for the host (now that
 GHC would be multi-target).
 
@@ -250,11 +251,11 @@ Fix Template Haskell stage hygiene
 Currently Template Haskell mixes up stages because it assumes that the confined
 mode is used.
 
-We should be able to specify/detect if an `import` is for a top-level TH splice
+We should be able to specify/detect if an ``import`` is for a top-level TH splice
 or not.
 
-We should remove `Lift` instances for target dependent types (e.g. `Word`,
-`Int`, linux only types, etc.).
+We should remove ``Lift`` instances for target dependent types (e.g. ``Word``,
+``Int``, linux only types, etc.).
 
 Related:
 
@@ -273,10 +274,10 @@ It should have dynamic access (i.e. not via CPP) to the target platform
 properties (word size, endianness, etc.).
 
 We should provide a way to query some stuff about the target code via the
-external interpreter: e.g. `sizeOf (undefined :: MyStruct)`.
+external interpreter: e.g. ``sizeOf (undefined :: MyStruct)``.
 
 It should enhance speed as TH code is often used to perform syntactic
-transformations (e.g.  `makeLenses`) which don't require target code evaluation.
+transformations (e.g.  ``makeLenses``) which don't require target code evaluation.
 
 Related:
 
@@ -293,39 +294,39 @@ really ought to execute TH code compiled for the GHC host in all cases.
 Cabal: Setup.hs
 ---------------
 
-Cabal packages are built by a `Setup.hs` program running on the compiler host.
-Most of them use the same "Simple" on but other use custom `Setup.hs`, with
-dependencies specified in the `.cabal` files, etc.
+Cabal packages are built by a ``Setup.hs`` program running on the compiler host.
+Most of them use the same "Simple" on but other use custom ``Setup.hs``, with
+dependencies specified in the ``.cabal`` files, etc.
 
-Once GHC becomes multi-target, Stack and cabal-install could use `-target self`
+Once GHC becomes multi-target, Stack and cabal-install could use ``-target self``
 to produce the actual program for the compiler host. It would ensure that the
-compiler and `Setup` would use the same boot libraries.
+compiler and ``Setup`` would use the same boot libraries.
 
 Currently cross-compilers such as GHCJS and Asterius use two GHC compilers: one
 for the target and another for the host (used to build the former, the plugins
-and `Setup.hs` programs).
+and ``Setup.hs`` programs).
 
-Cabal: `configure` build-type
------------------------------
+Cabal: ``configure`` build-type
+-------------------------------
 
-Some Cabal packages use `build-type: configure` (see the `user manual
+Some Cabal packages use ``build-type: configure`` (see the `user manual
 <https://www.haskell.org/cabal/users-guide/developing-packages.html#system-dependent-parameters>`_).
 During the configuration phase, the package description is modified by a
-`configure` script producing a `buildinfo` file.
+``configure`` script producing a ``buildinfo`` file.
 
 This only works on Unix-like systems and without additional parameters it
 assumes that the target is the host.
 
 Portable packages (in particular boot libraries) shouldn't use this. They might
-call `configure` in custom `Setup.hs` on Unix-like platforms though, passing it
+call ``configure`` in custom ``Setup.hs`` on Unix-like platforms though, passing it
 flags to specify the actual target if necessary.
 
 
 Remove platform CPP
 -------------------
 
-GHC should expose a virtual package (like `ghc-prim`) with target information
+GHC should expose a virtual package (like ``ghc-prim``) with target information
 (e.g. word size, endianness) as values/types instead of using CPP to include
-`MachDeps.h`.
+``MachDeps.h``.
 
 Expressions using these values would be simplified in Core.
