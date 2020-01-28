@@ -72,7 +72,7 @@ it can produce objects that:
 
 - use the multi-threaded runtime system or not
 - support profiling or not
-- dump additional debug information or not
+- use additional debug assertions or not
 - use different heap object representation (e.g. `tables_next_to_code`)
 - support dynamic linking or not
 
@@ -114,7 +114,7 @@ to another one hosted on another platform or in a VM (e.g. NodeJS), etc..
 GHC performs two-way communication with this process to send ByteCode to
 evaluate, to ask for package to be linked, etc. During code execution, the
 `iserv` process may query the host GHC (e.g. when Template Haskell code is run,
-it may query information about some `Names` and these information lives in the
+it may query information about some `Names` and these information live in the
 host GHC).
 
 GHC spawns a different `iserv` process depending on the selected target way:
@@ -124,17 +124,17 @@ target object codes built which have not been built with the same way as GHC.
 A different external interpreter can be specified with the `-pgmi` command-line
 option.
 
-Using the external interpreter in GHCi makes sense because it allows the
+1. Using the external interpreter in GHCi makes sense because it allows the
 execution of the code produced for the target on the host (or remotely but it is
 internal to the `iserv` process and GHC isn't aware of it).
 
-Using the external interpreter to execute Template Haskell code doesn't really
+2. Using the external interpreter to execute Template Haskell code doesn't really
 make sense: TH code is similar to plugin code in that it has access to some
 compiler internals (`Names`, etc.), it can modify the syntax tree and it can
 perform IO (read files, etc.). Morally it should be built so that it can be
 linked with the compiler and executed on the host.
 
-Compiler plugins don't work at all with the external interpreter (see `#14335
+3. Compiler plugins don't work at all with the external interpreter (see `#14335
 <https://gitlab.haskell.org/ghc/ghc/issues/14335>`_). It is because they
 directly depend on the `ghc` package and assume they are going to be linked with
 it. Executing compiler plugins in the external interpreter would mean that the
