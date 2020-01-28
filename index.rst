@@ -64,8 +64,8 @@ A GHC compiler trimmed of these features is called **stage 1** compiler. **stage
 built by stage 1 (potentially on a different platform than stage 0 host).
 
 
-Breach #2: RTS ways
--------------------
+Breach #2: compiler ways
+------------------------
 
 GHC can produce different code objects depending on some options. For example,
 it can produce objects that:
