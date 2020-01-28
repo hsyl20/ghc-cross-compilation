@@ -112,7 +112,7 @@ Breach #3: external interpreter
 
 The idea behind the external interpreter is to delegate the execution of the
 target code to another process (called ``iserv``). This process can then delegate
-to another one hosted on another platform or in a VM (e.g. NodeJS), etc.. 
+to another one hosted on another platform or in a VM (e.g. NodeJS), etc.
 
 GHC performs two-way communication with this process to send ByteCode to
 evaluate, to ask for package to be linked, etc. During code execution, the
