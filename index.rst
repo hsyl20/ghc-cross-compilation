@@ -140,9 +140,9 @@ option.
 
 3. Compiler plugins don't work at all with the external interpreter (see `#14335
    <https://gitlab.haskell.org/ghc/ghc/issues/14335>`_). It is because they
-   directly depend on the `ghc` package and assume they are going to be linked
+   directly depend on the ``ghc`` package and assume they are going to be linked
    with it. Executing compiler plugins in the external interpreter would mean
-   that the communication protocol between iserv and GHC would need to be
+   that the communication protocol between ``iserv`` and GHC would need to be
    extended to support everything a compiler plugin can do. As compiler plugins
    can do virtually anything in the compiler, it would mean that most GHC
    datatypes would need to be serializable, most functions explicitly exposed,
