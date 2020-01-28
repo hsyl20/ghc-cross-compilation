@@ -122,7 +122,7 @@ host GHC).
 
 GHC spawns a different ``iserv`` process depending on the selected target way:
 ``ghc-iserv-prof``, ``ghc-iserv-dyn``, etc. This allows the ``iserv`` process to load
-target object codes built which have not been built with the same way as GHC.
+target object codes which have not been built with the same way as GHC.
 
 A different external interpreter can be specified with the ``-pgmi`` command-line
 option.
@@ -281,11 +281,11 @@ transformations (e.g.  ``makeLenses``) which don't require target code evaluatio
 
 Related:
 
-- an alternative `proposal
-<https://github.com/ghc-proposals/ghc-proposals/issues/162>`_ consists in
-interpreting TH (target) code with a Core interpreter. However TH code may
-invoke native functions which would be different depending on the target. We
-really ought to execute TH code compiled for the GHC host in all cases.
+- an alternative `proposal <https://github.com/ghc-proposals/ghc-proposals/issues/162>`_
+  consists in interpreting TH (target) code with a Core interpreter. However TH
+  code may invoke native functions which would be different depending on the
+  target. We really ought to execute TH code compiled for the GHC host in all
+  cases.
 
 - an STG interpreter could be used too (e.g. `ministg
   <http://hackage.haskell.org/package/ministg>`_)
