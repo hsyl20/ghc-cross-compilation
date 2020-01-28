@@ -5,7 +5,7 @@ Wouldn't it be awesome if GHC was able to cross-compile Haskell code to
 WebAssembly, JavaScript, Java bytecode, etc.? Sadly it can't be done directly
 with stock GHC. Several glorious attempts at doing cross-compilation (e.g.
 `GHCJS <https://github.com/ghcjs/ghcjs>`_, `Asterius
-<https://github.com/tweag/asterius/>`_, `Eta <eta-lang.org>`_) are based on GHC
+<https://github.com/tweag/asterius/>`_, `Eta <https://eta-lang.org>`_) are based on GHC
 forks and rely on less glorious hacks to work.
 
 This document explains why cross-compiling Haskell code with GHC is so
