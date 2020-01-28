@@ -166,6 +166,7 @@ packages/modules.
 GHCJS `uses a hack
 <https://github.com/ghcjs/ghcjs/blob/e87195eaa2bc7e320e18cf10386802bc90b7c874/src/Compiler/Plugins.hs#L2>`_ to
 support plugins while its target is JavaScript code:
+
 - the plugin still needs to exists amongst the target modules
 - when loading a plugin module, instead of loading the plugin from the target
   database, it tries to find a matching module in the host database
