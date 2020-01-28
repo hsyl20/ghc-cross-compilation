@@ -180,8 +180,8 @@ mode. In particular, it supports loading plugins from the "home package" (the
 set of modules it is currently compiling). While GHC isn't multi-target, it
 won't be able to build its own plugins. Cross-compilers such as GHCJS or
 Asterius relies on two GHCs: one for the real target and one which targets the
-compiler host (the latter is also used to build Cabal's Setup.hs files which are
-run on the compiler host too).
+compiler host. We probably should make GHC multi-target before we could get this
+change integrated upstream.
 
 Make GHC multi-target
 ---------------------
