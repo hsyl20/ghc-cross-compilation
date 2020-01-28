@@ -280,7 +280,7 @@ Related: an alternative `proposal
 <https://github.com/ghc-proposals/ghc-proposals/issues/162>`_ consists in
 interpreting TH (target) code with a Core interpreter. However TH code may
 invoke native functions which would be different depending on the target. We
-really ought to execute/interpret GHC host code in all cases.
+really ought to execute TH code compiled for the GHC host in all cases.
 
 Cabal: Setup.hs
 ---------------
