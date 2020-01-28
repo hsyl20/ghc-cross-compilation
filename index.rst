@@ -112,9 +112,9 @@ Breach #3: external interpreter
 
 The idea behind the external interpreter is to delegate the execution of the
 target code to another process (called ``iserv``). This process can then delegate
-to another one hosted on another platform or in a VM (e.g. NodeJS), etc.
+to another one hosted on another platform or in a VM (e.g. NodeJS) if necessary.
 
-GHC performs two-way communication with this process to send ByteCode to
+GHC performs two-way communication with ``iserv`` process to send ByteCode to
 evaluate, to ask for package to be linked, etc. During code execution, the
 ``iserv`` process may query the host GHC (e.g. when Template Haskell code is run,
 it may query information about some ``Names`` and these information live in the
@@ -128,25 +128,26 @@ A different external interpreter can be specified with the ``-pgmi`` command-lin
 option.
 
 1. Using the external interpreter in GHCi makes sense because it allows the
-execution of the code produced for the target on the host (or remotely but it is
-internal to the ``iserv`` process and GHC isn't aware of it).
+   execution of the code produced for the target on the compiler host (or
+   remotely but it is internal to the ``iserv`` process and GHC isn't aware of
+   it).
 
-2. Using the external interpreter to execute Template Haskell code doesn't really
-make sense: TH code is similar to plugin code in that it has access to some
-compiler internals (``Names``, etc.), it can modify the syntax tree and it can
-perform IO (read files, etc.). Morally it should be built so that it can be
-linked with the compiler and executed on the host.
+2. Using the external interpreter to execute Template Haskell code doesn't
+   really make sense: TH code is similar to plugin code in that it has access to
+   some compiler internals (``Names``, etc.), it can modify the syntax tree and
+   it can perform IO (read files, etc.). Morally it should be built so that it
+   can be linked with the compiler and executed on the host.
 
 3. Compiler plugins don't work at all with the external interpreter (see `#14335
-<https://gitlab.haskell.org/ghc/ghc/issues/14335>`_). It is because they
-directly depend on the `ghc` package and assume they are going to be linked with
-it. Executing compiler plugins in the external interpreter would mean that the
-communication protocol between iserv and GHC would need to be extended to
-support everything a compiler plugin can do. As compiler plugins can do
-virtually anything in the compiler, it would mean that most GHC datatypes would
-need to be serializable, most functions explicitly exposed, etc. Moreover we
-would have to deal with the discrepancy between host and target datatypes (word
-size, etc.). It probably won't happen.
+   <https://gitlab.haskell.org/ghc/ghc/issues/14335>`_). It is because they
+   directly depend on the `ghc` package and assume they are going to be linked
+   with it. Executing compiler plugins in the external interpreter would mean
+   that the communication protocol between iserv and GHC would need to be
+   extended to support everything a compiler plugin can do. As compiler plugins
+   can do virtually anything in the compiler, it would mean that most GHC
+   datatypes would need to be serializable, most functions explicitly exposed,
+   etc. Moreover we would have to deal with the discrepancy between host and
+   target datatypes (word size, etc.). It probably won't happen.
 
 External interpreter links:
 
