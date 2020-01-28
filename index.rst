@@ -296,27 +296,27 @@ Cabal: Setup.hs
 ---------------
 
 Cabal packages are built by a ``Setup.hs`` program running on the compiler host.
-Most of them use the same "Simple" on but other use custom ``Setup.hs``, with
-dependencies specified in the ``.cabal`` files, etc.
+Most of them use the same "Simple" one but other use custom ``Setup.hs``, with
+dependencies specified in ``.cabal`` files.
 
 Once GHC becomes multi-target, Stack and cabal-install could use ``-target self``
 to produce the actual program for the compiler host. It would ensure that the
 compiler and ``Setup`` would use the same boot libraries.
 
 Currently cross-compilers such as GHCJS and Asterius use two GHC compilers: one
-for the target and another for the host (used to build the former, the plugins
-and ``Setup.hs`` programs).
+for the target and another for the host (used to build the former GHC, the
+compiler plugins and ``Setup.hs`` programs).
 
 Cabal: ``configure`` build-type
 -------------------------------
 
 Some Cabal packages use ``build-type: configure`` (see the `user manual
 <https://www.haskell.org/cabal/users-guide/developing-packages.html#system-dependent-parameters>`_).
-During the configuration phase, the package description is modified by a
+During the configuration phase, the package description is amended by a
 ``configure`` script producing a ``buildinfo`` file.
 
 This only works on Unix-like systems and without additional parameters it
-assumes that the target is the host.
+assumes that the target is the compiler host.
 
 Portable packages (in particular boot libraries) shouldn't use this. They might
 call ``configure`` in custom ``Setup.hs`` on Unix-like platforms though, passing it
