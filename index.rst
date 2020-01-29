@@ -292,7 +292,7 @@ Related:
   <http://hackage.haskell.org/package/ministg>`_)
 
 
-Cabal: Setup.hs
+Cabal: ``Setup.hs``
 ---------------
 
 Cabal packages are built by a ``Setup.hs`` program running on the compiler host.
@@ -302,10 +302,32 @@ dependencies specified in ``.cabal`` files.
 Once GHC becomes multi-target, Stack and cabal-install could use ``-target self``
 to produce the actual program for the compiler host. It would ensure that the
 compiler and ``Setup`` would use the same boot libraries.
+More importantly, it would ensure that `./Setup` can alays be run!
 
 Currently cross-compilers such as GHCJS and Asterius use two GHC compilers: one
 for the target and another for the host (used to build the former GHC, the
 compiler plugins and ``Setup.hs`` programs).
+While with a multi-target GHC we could get away with a single binary, it is traditional for cross-aware build tools to support different tools per platform, and @Ericson2314 thinks this is a good idea.
+For example, it would come in handy if a `iserv` for multiple platform needs to be built.
+Also, it means we can work on improving Cabal and GHC in parallel.
+
+Lastly, ``Setup.hs`` should be a bonafied Cabal componnent.
+Cabal now is well established in its notion of distinct components per-package that interact just through their dependencies.
+[By "only", @Ericson2314 means e.g. that they can and should be built separately.]
+``Setup.hs`` should be a regular executable component built like any other.
+What makes it different is an attribute of itself, but merely the fact that other components have a "this is my Setup.hs"-type dependendency on it.
+More importantly than nicely reducing special-cases, this cleanup segues between the rest of this section and the next.
+
+Cabal should understand cross compilation and bootstrapping
+-----------------------------------------------------------
+
+Cabal should understand cross compilation.
+But to understand cross, you need need to understand bootstrapping.
+The good thing is Cabal alreadd does have some understanding: "qualified goals".
+Qualified goals are a mechanism in the solver to "disconnect" the solution space to show how different executables and their library dependencies don't need to unify.
+We just need to combine this with the per-qualified-goal (née per-stage) platform information discussed in the context of Hadrian before, and we're mostly there.
+And, from the previous section, if Setup.hs is built and solved for just like `executables` in e.g. `build-tool-depends`, we get proper cross support for both out of the box.
+Lastly, this is a *huge* step towards the goal of GHC not needing bespoke logic in its build system.
 
 Cabal: ``configure`` build-type
 -------------------------------
@@ -322,6 +344,8 @@ Portable packages (in particular boot libraries) shouldn't use this. They might
 call ``configure`` in custom ``Setup.hs`` on Unix-like platforms though, passing it
 flags to specify the actual target if necessary.
 
+But for sake of unix-only packages it wouldn't be hard to teach Cabal to use `--build`, `--host`, and other Autotools conventinos.
+Autotools, after all, may be nasty and crude, but does actually have not-so-bad support for cross compilation thanks to GNU trying to sneak onto all manner of proprietery Unices in the 1990s.
 
 Remove platform CPP
 -------------------
