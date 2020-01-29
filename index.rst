@@ -122,7 +122,7 @@ host GHC).
 
 GHC spawns a different ``iserv`` process depending on the selected target way:
 ``ghc-iserv-prof``, ``ghc-iserv-dyn``, etc. This allows the ``iserv`` process to load
-target object codes which have not been built with the same way as GHC.
+target code objects which have not been built with the same way as GHC.
 
 A different external interpreter can be specified with the ``-pgmi`` command-line
 option.
@@ -188,7 +188,7 @@ mode. In particular, it supports loading plugins from the "home package" (the
 set of modules it is currently compiling). While GHC isn't multi-target, it
 won't be able to build its own plugins. Cross-compilers such as GHCJS or
 Asterius relies on two GHCs: one for the real target and one which targets the
-compiler host. We probably should make GHC multi-target and probably
+compiler host. We probably should make GHC multi-target and
 multi-package before we could get this change integrated upstream.
 
 Make GHC multi-target
@@ -199,9 +199,24 @@ GHC should be able to produce code objects for at least 2 targets:
 - its own host platform and compiler way (for plugins): ``-target self``
 - one or more other targets
 
-We need a way to configure two toolchains (gcc, llvm, as, ld, ar, strip, etc.):
-one for GHC plugins and another for the current target. We need to handle
-per-target package databases.
+We need a way to configure two external toolchain information (gcc, llvm, as,
+ld, ar, strip, etc.): one for GHC plugins and another for the current target.
+A bunch of work has been done making GHC read these things from the ``settings``
+file rather than it be hard-coded at build time.
+
+There are still some target dependant hard-coded information in GHC about
+`Int64#/Word64#` primops (cf `#11953
+<https://gitlab.haskell.org/ghc/ghc/issues/11953>`_, `#17375
+<https://gitlab.haskell.org/ghc/ghc/issues/17375>`_, `#17377
+<https://gitlab.haskell.org/ghc/ghc/issues/17377>`_), which @Ericson2314 attemps
+to fix in `!1102 <https://gitlab.haskell.org/ghc/ghc/merge_requests/1102>`_.
+
+GHC needs to handle per-target package databases.
+
+Making GHC multi-target does not make it able to produce code objects for
+multiple targets in a single GHC session. In particular it can't build plugins
+(`-target self`) and actual code objects for the real target in the same session
+yet. We need to make GHC multi-package to support this.
 
 Make GHC multi-package
 ----------------------
@@ -239,25 +254,80 @@ GHC would be multi-target).
 
 Related issue: https://gitlab.haskell.org/ghc/ghc/issues/12218
 
-Make boot libraries reinstallable
----------------------------------
+Make boot libraries and GHC reinstallable
+-----------------------------------------
+
+The long term goal it to make GHC behave like any other Haskell program, and the
+boot libraries like any other Haskell libraries.
 
 GHC should be able to rebuild its boot libraries with different flags. Similarly
 to iserv programs, GHC distributions shouldn't have to provide boot libraries
 for every target (in addition to the boot libraries used by the compiler).
 
-As plugin packages/modules would be separate from target packages/modules,
-downloading boot libraries from Hackage and compiling them for the target
-wouldn't impact plugin packages/modules.
+Similarly we also want GHC itself and the RTS to be reinstallable using standard
+Haskell tools. It means that GHC shouldn't need Hadrian to be built but should
+behave like a standard Cabal package.
 
-Make GHC and the RTS reinstallable
-----------------------------------
+There are several subtasks to perform before we can achieve this goal:
 
-We also want GHC itself and the RTS to be reinstallable.
+#. Rather than having global build, host, and target platforms (and ways, see
+   the next section), Hadrian should give each stage its own host
+   platform. As GHC would be multi-target, we can infer the effective target of
+   the ``stage n`` compiler by looking at the required host for the ``stage
+   (n+1)`` compiler. 
 
-We should be able to specify the RTS package to use.
+   Instead of having a list of stages, we could have a tree:
+      
+   .. code::
 
-Related: https://gitlab.haskell.org/ghc/ghc/merge_requests/490
+         0       -- the bootstrap compiler version X (was stage 0)
+         |- 0    -- compiler version X+1, without `-target self` support
+         |  |       because of ABI mismatch (was stage 1), same host
+         |  |- 0 -- compiler version X+1 that supports `-target self` (was stage 2)
+         |  |- 1 -- same but with other build options (e.g. profiling enabled)
+         |  |- 2 -- same but with other build options (e.g. debugging enabled)
+         |
+         |- 1    -- compiler version X+1, without `-target self` support,
+         |  |       with other build options
+         ....
+
+
+#. GHC's configure script should be split up per-package (cf `#17191
+   <https://gitlab.haskell.org/ghc/ghc/issues/17191>`_ ).
+   Once Hadrian is fixed per the previous item, autoconf is the next culprit.
+   Currently, a single top-level ``configure.ac`` file is used for several
+   packages and the compiler itself.
+
+   Rather than use a dummy ``--target`` when building the compiler itself
+   (because it is now multi-target), and then real ones when building the
+   libraries, we should just remove `--target` from the overall one.
+
+#. Configure scripts should be avoided altogether. If we want to build GHC on
+   non Unix-like hosts (like Windows without using MSYS2), we shouldn't use
+   configure scripts.
+
+#. Don't generate source files with an external tool that GHC/Cabal isn't aware
+   of. Currently Hadrian generates several files:
+
+      * Parser/Lexer (via Happy/Alex): cf `#17750 <https://gitlab.haskell.org/ghc/ghc/issues/17750>`_
+      * primops (via genprimopcode)
+   
+   Related: `!490 <https://gitlab.haskell.org/ghc/ghc/merge_requests/490>`_
+
+#. Build GHC in Nix.
+
+   Writing a build system is very hard especially because we don't want to
+   mix up wrong files: e.g. wrong external files picked (``.h`` header files),
+   artefacts produced from previous builds, etc.
+
+   There have been several tickets involving these kind of issues with GHC's
+   build system (e.g. `Hadrian picking the wrong gmp header
+   <https://gitlab.haskell.org/ghc/ghc/issues/17756>`_).
+
+   `Nix <https://nixos.org/nix/>` is a purely functional build system that
+   provides sandboxed builds and correct-by-construction caching. It would be
+   great to be able to build GHC using `haskell.nix
+   <https://input-output-hk.github.io/haskell.nix/>`_ to benefit from it.
 
 Blend ways into targets
 -----------------------
