@@ -195,9 +195,11 @@ GHC should be able to produce code objects for at least 2 targets:
 - its own host platform and compiler way (for plugins): ``-target self``
 - one or more other targets
 
-We need a way to configure two toolchains (gcc, llvm, as, ld, ar, strip, etc.):
-one for GHC plugins and another for the current target.
+A bunch of work has been done making GHC read things from the ``settings`` file rather than it be hard-coded at build time.
+External toolchain information toolchains (gcc, llvm, as, ld, ar, strip, etc.) is in there, for example.
+The only information that is still hard-coded in GHC is some primop information, which `!1102 <https://gitlab.haskell.org/ghc/ghc/merge_requests/1102>`_ attempts to fix. [While reducing reliance on variable-sized unboxed types for fixed-sized uses is good on its own, @Ericson2314 is persuing this PR because of its cross implications and not because he loves primops.\]
 
+This still leaves getting *multiple* targets in a single GHC session for sake of TH and plugins, but this should be easier after the the above is finished. It's easier to change the flow of already dynamic information than make it dynamic in the first place.
 
 Make iserv program reinstallable
 --------------------------------
@@ -231,6 +233,30 @@ We also want GHC itself and the RTS to be reinstallable.
 We should be able to specify the RTS package to use.
 
 Related: https://gitlab.haskell.org/ghc/ghc/merge_requests/490
+
+"Reinstallability" in general
+-----------------------------
+
+The long term goal should always be that GHC is program like any other Haskell program, and the boot libraries are libraries like any other.
+For example, @Ericsosn2314 wishes to see Hadrian evolve into a Cabal reimplemenation or something not-GHC specific, because there ought there should be no special logic to write for GHC!
+
+Steping back towards the immediate future, one implication of multi-target is a single stage ``n`` should be able to bootstrap multiple stages ``(n + 1)``. Supporting this means a number of interesting refactors to Hadrian:
+
+#. Rather than having a global build, host, and target platforms (and ways, see the next section), Hadrian should give each stage should have its should have its own build and host platforms, such that the previous stage's host platform is its build platform.
+   [This stage-relative naming platform is pioneered by Nixpkgs. Alas nixpkgs also needs a per-stage target platform because not all compilers are multi-target!]
+
+#. GHC's configure script should be split up per-package. (`<#17191 https://gitlab.haskell.org/ghc/ghc/issues/17191>`_ tracks this.)
+   Once Hadrian is fixed per the previous itme, autoconf is the next culprit.
+   Rather than use a dummy ``--target`` when building the compiler itself, and then real ones when building the libraries, we should just remove `--target` from the overall one.
+   Most of the logic is RTS specific, which makes sense as the RTS is a C program and autoconf was written for C, Just making an RTS-configure is half the battle here.
+   
+#. Use TH in GHC!
+   The prohibition of TH in GHC is actually a very practical concern, because it means that much metaprogrmaming (e.g. `genprimops` is being done in ad-hoc ways, which greatly complicate the build system and thus impedes reinstallability.
+ 
+#. Bonus: Build GHC in Nix.
+   @Ericson2314 doesn't have much confidence in build systems that don't sandbox builds and correct-by-construction caching.
+   That limits us to...just Nix today.
+   He'd love to see a GHC be buildable with ``haskell.nix``, which should become easier and easier as tasks necessary to build GHC become simpler and less bespoke.
 
 Blend ways into targets
 -----------------------
