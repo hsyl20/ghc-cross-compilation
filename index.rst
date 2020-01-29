@@ -175,17 +175,23 @@ support plugins while its target is JavaScript code:
 - when loading a plugin module, instead of loading the plugin from the target
   database, it tries to find a matching module in the host database
 
-The task is to make GHC aware of two databases: plugin and target. Loading a
+The task is to make GHC aware of at leasts two databases: plugin and 1 per target. Loading a
 plugin would be done via the plugin database and plugin would always be executed
 with the internal interpreter.
 
 Breaking change: currently GHC is able to compile its own plugins in confined
 mode. In particular, it supports loading plugins from the "home package" (the
 set of modules it is currently compiling). While GHC isn't multi-target, it
-won't be able to build its own plugins. Cross-compilers such as GHCJS or
-Asterius relies on two GHCs: one for the real target and one which targets the
-compiler host. We probably should make GHC multi-target before we could get this
-change integrated upstream.
+won't be able to build its own plugins.
+\[And even then, the external interpreter must be used when the GHC used to build the current GHC uses a diffrent ABI.\]
+Cross-compilers such as GHCJS or Asterius relies on two GHCs: one for the real target and one which targets the
+compiler host. 
+
+While this isn't pressing until we hae mutlit-targete support, we can get started on fixing this out:
+
+ - Multiple home packages, useful to work on plugins at the same time. Started in https://github.com/ghc-proposals/ghc-proposals/pull/263 . Also good for multiple-package development in general.
+
+ - Per target external package db?
 
 Make GHC multi-target
 ---------------------
