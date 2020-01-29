@@ -215,7 +215,7 @@ GHC needs to handle per-target package databases.
 
 Making GHC multi-target does not make it able to produce code objects for
 multiple targets in a single GHC session. In particular it can't build plugins
-(`-target self`) and actual code objects for the real target in the same session
+(``-target self``) and actual code objects for the real target in the same session
 yet. We need to make GHC multi-package to support this.
 
 Make GHC multi-package
@@ -401,13 +401,13 @@ Now how would we execute TH code:
 
 #. Use the internal interpreter just like plugins.
 
-   It requires a compiler with `-target self` support. Hence TH wouldn't be
+   It requires a compiler with ``-target self`` support. Hence TH wouldn't be
    supported in the stage 1 compiler and still couldn't be used in GHC source
    itself.
 
 #. Use another interpreter for host code.
 
-   We could compile TH code with `-target self` but not all the way to producing
+   We could compile TH code with ``-target self`` but not all the way to producing
    code objects because we may not be able to load them (e.g. in a stage 1
    compiler). Instead we stop at a previous stage and interpret the intermediate
    representation:
