@@ -293,8 +293,7 @@ There are several subtasks to perform before we can achieve this goal:
 
 
 #. GHC's configure script should be split up per-package (cf `#17191
-   <https://gitlab.haskell.org/ghc/ghc/issues/17191>`_ ).
-   Once Hadrian is fixed per the previous item, autoconf is the next culprit.
+   <https://gitlab.haskell.org/ghc/ghc/issues/17191>`_).
    Currently, a single top-level ``configure.ac`` file is used for several
    packages and the compiler itself.
 
@@ -309,8 +308,8 @@ There are several subtasks to perform before we can achieve this goal:
 #. Don't generate source files with an external tool that GHC/Cabal isn't aware
    of. Currently Hadrian generates several files:
 
-      * Parser/Lexer (via Happy/Alex): cf `#17750 <https://gitlab.haskell.org/ghc/ghc/issues/17750>`_
-      * primops (via genprimopcode)
+   * Parser/Lexer (via Happy/Alex): cf `#17750 <https://gitlab.haskell.org/ghc/ghc/issues/17750>`_
+   * primops (via genprimopcode)
    
    Related: `!490 <https://gitlab.haskell.org/ghc/ghc/merge_requests/490>`_
 
