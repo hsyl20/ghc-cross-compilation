@@ -175,17 +175,21 @@ support plugins while its target is JavaScript code:
 - when loading a plugin module, instead of loading the plugin from the target
   database, it tries to find a matching module in the host database
 
-The task is to make GHC aware of two databases: plugin and target. Loading a
-plugin would be done via the plugin database and plugin would always be executed
-with the internal interpreter.
+The task is to make GHC aware of at least two databases: plugin and 1 per
+target. Loading a plugin would be done via the plugin database and plugin would
+always be executed with the internal interpreter.
+
+Plugins still won't work for stage 1 compilers because of ABI mismatch: the
+stage 0 compiler may produce code objects for the stage 1 compiler that are not
+compatible with the code objects the stage 1 compiler produces.
 
 Breaking change: currently GHC is able to compile its own plugins in confined
 mode. In particular, it supports loading plugins from the "home package" (the
 set of modules it is currently compiling). While GHC isn't multi-target, it
 won't be able to build its own plugins. Cross-compilers such as GHCJS or
 Asterius relies on two GHCs: one for the real target and one which targets the
-compiler host. We probably should make GHC multi-target before we could get this
-change integrated upstream.
+compiler host. We probably should make GHC multi-target and probably
+multi-package before we could get this change integrated upstream.
 
 Make GHC multi-target
 ---------------------
@@ -196,7 +200,30 @@ GHC should be able to produce code objects for at least 2 targets:
 - one or more other targets
 
 We need a way to configure two toolchains (gcc, llvm, as, ld, ar, strip, etc.):
-one for GHC plugins and another for the current target.
+one for GHC plugins and another for the current target. We need to handle
+per-target package databases.
+
+Make GHC multi-package
+----------------------
+
+Currently a GHC instance can only compile modules from a single package, then
+called "home package". Making GHC multi-package would mean that we would have
+several active "home" packages at the same time.
+
+Suppose we have a package containing a plugin module P and another module M
+using the plugin. In confined mode we can just build and load P before building
+M. But in a cross-compilation settings, we would need to build P with `-target
+self` and then load it before building M for the actual target. I.e. we would
+have the same package built for different targets. Hence we would have two
+active packages.
+
+Multi-package also permits interactive (re)compilation of modules from several
+packages (cf `#10827 <https://gitlab.haskell.org/ghc/ghc/issues/10827>`_).
+
+Related:
+
+* https://github.com/ghc-proposals/ghc-proposals/pull/263
+* https://gitlab.haskell.org/ghc/ghc/wikis/Multi-Session-GHC-API
 
 
 Make iserv program reinstallable
