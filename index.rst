@@ -280,10 +280,10 @@ There are several subtasks to perform before we can achieve this goal:
       
    .. code::
 
-         0       -- the bootstrap compiler version X (was stage 0)
-         |- 0    -- compiler version X+1, without `-target self` support
-         |  |       because of ABI mismatch (was stage 1), same host
-         |  |- 0 -- compiler version X+1 that supports `-target self` (was stage 2)
+         0       -- (old stage 0) the bootstrap compiler version X
+         |- 0    -- (old stage 1) compiler version X+1, same host as bootstrap,
+         |  |       don't have `-target self` support because of ABI mismatch
+         |  |- 0 -- (old stage 2) compiler version X+1 that supports `-target self`
          |  |- 1 -- same but with other build options (e.g. profiling enabled)
          |  |- 2 -- same but with other build options (e.g. debugging enabled)
          |
@@ -365,28 +365,65 @@ Related:
 Don't use the external interpreter for Template Haskell
 -------------------------------------------------------
 
-Template Haskell code shouldn't be executed by the external interpreter but
-similarly to plugins.
+Template Haskell code shouldn't be executed by the external interpreter because
+its code should be executed on the compiler host, not on the compiler target.
 
-It should have dynamic access (i.e. not via CPP) to the target platform
+It is especially true if the external interpreter use a simulator (e.g. Android,
+iOS, etc.) to run the code: TH code can perform unrestricted IO (readFile) and
+may expect to find some "source" data files. It is already an issue in confined
+mode (e.g. what is the current working directory of an executed TH splice? `it
+depends
+<https://github.com/haskus/packages/blob/fe2d5ce59e190ec54ae0f42a30c3eeed46997d45/haskus-utils-compat/src/lib/Haskus/Utils/Embed/ByteString.hs#L53>`_)
+but it is only worse with the external interpreter.
+
+A sane way would be to assume execution of TH codes on the compiler host. We
+should specify the interaction of TH splices with the filesystem. We should
+perhaps add a Cabal field similar to `data-files
+<https://www.haskell.org/cabal/users-guide/developing-packages.html#pkg-field-data-files>`_
+(or reuse `extra-source-files`) to indicate which files are accessible via TH
+code using a new method of the ``Quasi`` monad (e.g. ``qLookupDataFile ::
+FilePath -> Maybe ByteString``). Actually this could be done right now to avoid
+CWD related issues.
+
+TH code should have dynamic access (i.e. not via CPP) to the target platform
 properties (word size, endianness, etc.).
 
-We should provide a way to query some stuff about the target code via the
-external interpreter: e.g. ``sizeOf (undefined :: MyStruct)``.
+We should provide a way for TH code to query some stuff about the target code
+via the target code (external) interpreter: e.g. ``sizeOf (undefined ::
+MyTargetSpecificData)``. It could also be used to resolve identifiers that
+only exists in target code (e.g. evaluate ``'MyTargetSpecificData :: Name``).
 
-It should enhance speed as TH code is often used to perform syntactic
-transformations (e.g.  ``makeLenses``) which don't require target code evaluation.
+Executing code on the compiler host in every cases should enhance speed as TH
+code is often used to perform syntactic transformations (e.g. ``makeLenses``)
+which don't require target code evaluation.
 
-Related:
+Now how would we execute TH code:
 
-- an alternative `proposal <https://github.com/ghc-proposals/ghc-proposals/issues/162>`_
-  consists in interpreting TH (target) code with a Core interpreter. However TH
-  code may invoke native functions which would be different depending on the
-  target. We really ought to execute TH code compiled for the GHC host in all
-  cases.
+#. Use the internal interpreter just like plugins.
 
-- an STG interpreter could be used too (e.g. `ministg
-  <http://hackage.haskell.org/package/ministg>`_)
+   It requires a compiler with `-target self` support. Hence TH wouldn't be
+   supported in the stage 1 compiler and still couldn't be used in GHC source
+   itself.
+
+#. Use another interpreter for host code.
+
+   We could compile TH code with `-target self` but not all the way to producing
+   code objects because we may not be able to load them (e.g. in a stage 1
+   compiler). Instead we stop at a previous stage and interpret the intermediate
+   representation:
+
+   - Core interpreter: compile to down to Core and evaluate it (cf `proposal
+     <https://github.com/ghc-proposals/ghc-proposals/issues/162>`_)
+
+   - STG interpreter: same but for STG (e.g. `ministg
+     <http://hackage.haskell.org/package/ministg>`_)
+
+   - ByteCode interpreter: same but for ByteCode. It is similar to the current
+     internal interpreter but we would need to refactor it to virtualize the
+     interactions between the compiler and the interpreter (currently the
+     internal interpreter treats the rest of the compiler as yet another native
+     code library, just one that happens to be statically linked with the
+     interpreter itself).
 
 
 Cabal: Setup.hs
