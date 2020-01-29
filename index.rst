@@ -175,7 +175,7 @@ support plugins while its target is JavaScript code:
 - when loading a plugin module, instead of loading the plugin from the target
   database, it tries to find a matching module in the host database
 
-The task is to make GHC aware of at leasts two databases: plugin and 1 per target. Loading a
+The task is to make GHC aware of at least two databases: plugin and 1 per target. Loading a
 plugin would be done via the plugin database and plugin would always be executed
 with the internal interpreter.
 
