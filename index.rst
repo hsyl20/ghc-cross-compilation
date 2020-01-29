@@ -273,12 +273,19 @@ similarly to plugins.
 
 It should have dynamic access (i.e. not via CPP) to the target platform
 properties (word size, endianness, etc.).
+@Ericson2314 thinks this is laudible, but not yet possible in all cases.
+In particular, metaprograms need to be able quote syntax with identifers resolved against the next stage's imports.
+To do that dynamically, we would need to interleave much of work of the GHC frontend with metaprogrmaming evalation / configuration choices.
+At HIW 2019, @Ericson2314 and @mpickering sketched out what we hope is prior work that shoes it is possible to do this.
+\[The relates to how the reader monad transform commutes, and also how symbolic evalution doesn't *always* blow up.\]
+Nevertheless, it will take a huge research and implementation effort to do this.
 
 We should provide a way to query some stuff about the target code via the
 external interpreter: e.g. ``sizeOf (undefined :: MyStruct)``.
+\[@Ericson2314 Thinks this shoudl be ``sizeOf ''MyStruct`` and not require target code.\]
 
 It should enhance speed as TH code is often used to perform syntactic
-transformations (e.g.  ``makeLenses``) which don't require target code evaluation.
+transformations (e.g. ``makeLenses``) which don't require target code evaluation.
 
 Related:
 
@@ -287,10 +294,20 @@ Related:
   code may invoke native functions which would be different depending on the
   target. We really ought to execute TH code compiled for the GHC host in all
   cases.
+  
+  Note that the core interpreter is still useful for the "stage 1 compiler" usse-case where the ABI has changed, and one doesn't want use ``iserv``.
+  Assuming the sane case of only wanting portable or host platform semantics, we *still* cannot use the regular internal interpreter because the ABI of GHC itself and the programs it produces doesn't match.
 
 - an STG interpreter could be used too (e.g. `ministg
   <http://hackage.haskell.org/package/ministg>`_)
 
+- Perhaps we could use only bytecode rather than core, but we would have to virtualize the interactions between the compiler and the interpreter.
+  This is in constrast to the usual trick of having the internal interpreter treat the rest of compiler as yet another native code library, just one that happens to be statically linked with the interpreter itself.
+
+\[Aside: @Ericsos2314 thinks the more interpreters, the merrier!
+Let's have definitional interpreters for all our language for both to actually be used downsream, and to act as "living standards" and oracles in tests.
+It is said that the current rewrite rules basically provide all the small steps.
+Well, it would be cool to automatically go from those small steps into a realistic big-step inerpreter.]
 
 Cabal: Setup.hs
 ---------------
