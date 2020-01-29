@@ -266,7 +266,7 @@ for every target (in addition to the boot libraries used by the compiler).
 
 Similarly we also want GHC itself and the RTS to be reinstallable using standard
 Haskell tools. It means that GHC shouldn't need Hadrian to be built but should
-behave like a standard Cabal package.
+behave like standard Cabal packages.
 
 There are several subtasks to perform before we can achieve this goal:
 
@@ -390,8 +390,9 @@ properties (word size, endianness, etc.).
 
 We should provide a way for TH code to query some stuff about the target code
 via the target code (external) interpreter: e.g. ``sizeOf (undefined ::
-MyTargetSpecificData)``. It could also be used to resolve identifiers that
-only exists in target code (e.g. evaluate ``'MyTargetSpecificData :: Name``).
+MyTargetSpecificData)``. It could also be used to resolve quoted identifiers
+that only exists in target code (e.g. evaluate ``'MyTargetSpecificData ::
+Name``).
 
 Executing code on the compiler host in every cases should enhance speed as TH
 code is often used to perform syntactic transformations (e.g. ``makeLenses``)
