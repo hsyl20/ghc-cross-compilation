@@ -430,62 +430,74 @@ Now how would we execute TH code:
      interpreter itself).
 
 
-Cabal: ``Setup.hs``
--------------------
+Cabal
+-----
 
-Cabal packages are built by a ``Setup.hs`` program running on the compiler host.
-Most of them use the same "Simple" one but other use custom ``Setup.hs``, with
-dependencies specified in ``.cabal`` files.
+Cabal should understand cross compilation and bootstrapping.
 
-Once GHC becomes multi-target, Stack and cabal-install could use ``-target
-self`` (for stage >= 2 compilers) or ``-target host`` (for any stage compiler,
-including stage 1) to produce the actual program for the compiler host. It would
-ensure that ``Setup`` programs can always be built and run on the host.
+#. ``Setup.hs``
 
-* ``-target self``: when it is available (stage >= 2) it allows the use of the
-  same boot libraries as the compiler itself
+   Cabal packages are built by a ``Setup.hs`` program running on the compiler
+   host. Most of them use the same "Simple" one but other use custom
+   ``Setup.hs``, with dependencies specified in ``.cabal`` files.
 
-* ``-target host``: should always be available. However with stage 1 compilers
-  we can't reuse self packages (boot libraries of the compilers and the compiler
-  package itself) because of ABI mismatch. Hence a second set of boot libraries
-  need to be built for the host just as if we were building a stage 2
-  compiler (hence it may require reinstallable boot libraries).
+   Once GHC becomes multi-target, Stack and cabal-install could use ``-target
+   self`` (for stage >= 2 compilers) or ``-target host`` (for any stage
+   compiler, including stage 1) to produce the actual program for the compiler
+   host. It would ensure that ``Setup`` programs can always be built and run on
+   the host.
 
-Currently cross-compilers such as GHCJS and Asterius use two GHC compilers: one
-for the target and another for the host (used to build the former GHC, the
-compiler plugins and ``Setup.hs`` programs).
+   * ``-target self``: when it is available (stage >= 2) it allows the use of
+     the same boot libraries as the compiler itself
+   
+   * ``-target host``: should always be available. However with stage 1
+     compilers we can't reuse self packages (boot libraries of the compilers and
+     the compiler package itself) because of ABI mismatch. Hence a second set of
+     boot libraries need to be built for the host just as if we were building a
+     stage 2 compiler (hence it may require reinstallable boot libraries). Or
+     Cabal should be aware of the bootstrapping relationships between toolchains
+     (next item).
 
-``Setup.hs`` should be a regular Cabal executable component built like any
-other.  Cabal now is well established in its notion of distinct components
-per-package that interact just through their dependencies. What makes
-``Setup.hs`` component different is:
+#. Cabal should be aware of the available toolchains
 
-* the fact that other components of the package have a "this is my
-  Setup.hs"-type dependency on it
-* the fact that it is built to be executed on the compiler host, not on the
-  actual target.
+   Currently cross-compilers such as GHCJS and Asterius use two GHC compilers:
+   one for the target and another for the host (used to build the former GHC,
+   the compiler plugins and ``Setup.hs`` programs). It would be good to make
+   Cabal aware of the different toolchains (including GHC compilers) at its
+   disposal and their bootstrapping relation.
 
-More importantly than nicely reducing special-cases, this cleanup segues between
-the rest of this section and the next.
+   * While GHC and Clang are multi-target, other tools like GCC are not so Cabal
+     would already need a nothing of per-stage tools. It's not that much harder
+     to also make that available for GHC itself.
 
+   * When using a stage 1 compiler that doesn't provide ``-target self``, one
+     has the option to instead use the previous stage's compiler to build
+     plugins, which will make the ABI match.
 
-Cabal should understand cross compilation and bootstrapping
------------------------------------------------------------
+#. ``Setup.hs`` should be a regular Cabal executable component built like any
+   other.  Cabal now is well established in its notion of distinct components
+   per-package that interact just through their dependencies. What makes
+   ``Setup.hs`` component different is:
 
-Cabal needs to know the target and the dependencies of each component it builds,
-including ``Setup.hs`` components as per the previous section.
+   * the fact that other components of the package have a "this is my
+     Setup.hs"-type dependency on it
 
-cabal-install's solver already does have some understanding of disjoint
-dependency graphs (via `qualified goals
-<https://www.well-typed.com/blog/2015/03/qualified-goals/>`_). E.g. when trying
-to build package ``foo`` which depends on ``base``, it tries to find a ``base``
-package for ``base`` and another for ``foo.setup.base`` (they may not be the
-same).
-We would have to extend this mechanism to consider target and stage information
-(as discussed in the context of Hadrian above).
+   * the fact that it is built to be executed on the compiler host, not on the
+     actual target.
 
-This would be a *huge* step towards the goal of GHC not needing bespoke logic in
-its build system.
+#. Cabal needs to know the target and the dependencies of each component it
+   builds, including ``Setup.hs`` components as per the previous item.
+
+   cabal-install's solver already does have some understanding of disjoint
+   dependency graphs (via `qualified goals
+   <https://www.well-typed.com/blog/2015/03/qualified-goals/>`_). E.g. when
+   trying to build package ``foo`` which depends on ``base``, it tries to find a
+   ``base`` package for ``base`` and another for ``foo.setup.base`` (they may
+   not be the same).  We would have to extend this mechanism to consider target
+   and stage information (as discussed in the context of Hadrian above).
+
+   This would be a *huge* step towards the goal of GHC not needing bespoke logic
+   in its build system.
 
 
 Cabal: ``configure`` build-type
