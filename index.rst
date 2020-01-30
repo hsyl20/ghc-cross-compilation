@@ -509,8 +509,8 @@ be nasty and crude, but does actually have not-so-bad support for cross
 compilation thanks to GNU trying to sneak onto all manner of proprietary Unices
 in the 1990s.
 
-Remove platform CPP
--------------------
+Remove platform specific CPP
+----------------------------
 
 GHC should expose a virtual package (like ``ghc-prim``) with target information
 (e.g. word size, endianness) as values/types instead of using CPP to include
@@ -518,4 +518,42 @@ GHC should expose a virtual package (like ``ghc-prim``) with target information
 
 Expressions using these values would be simplified in Core.
 
-Related: https://www.youtube.com/watch?v=YupkE1vsZ4o
+We could use Template Haskell instead of CPP in some cases. E.g.
+
+.. code:: haskell
+
+   foo :: Int -> Int
+
+   #ifdef GHC_VERSION <= 806
+   foo x = x + y
+   #else
+   foo x = x + z
+   #endif
+
+   -- becomes
+
+   $(if ghc_version <= 806
+      then [d| foo :: Int -> Int
+               foo x = x + y
+           |]
+      else [d| foo :: Int -> Int
+               foo x = x + z
+           |]
+   )
+
+   -- or
+   foo :: Int -> Int
+   foo x = $(if ghc_version <= 806
+               then [e| x+y |]
+               else [e| x+z |]
+            )
+
+
+The advantage of the latter is that both quotes must parse as valid Haskell
+code. However renaming and type-checking are performed lazily, which is what we
+want because some names may not be available (e.g. ``y`` or ``z``) depending on
+the condition (e.g. here ``ghc_version <= 806``).
+
+Related:
+
+* https://www.youtube.com/watch?v=YupkE1vsZ4o
