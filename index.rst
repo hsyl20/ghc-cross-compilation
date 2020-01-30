@@ -454,7 +454,7 @@ Cabal should understand cross compilation and bootstrapping.
      compilers we can't reuse self packages (boot libraries of the compilers and
      the compiler package itself) because of ABI mismatch. There two solutions:
       
-      * a second set of boot libraries need to be built for the host just as if
+     * a second set of boot libraries need to be built for the host just as if
         we were building a stage 2 compiler (hence it may require reinstallable
         boot libraries)
 
