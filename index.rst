@@ -517,3 +517,5 @@ GHC should expose a virtual package (like ``ghc-prim``) with target information
 ``MachDeps.h``.
 
 Expressions using these values would be simplified in Core.
+
+Related: https://www.youtube.com/watch?v=YupkE1vsZ4o
