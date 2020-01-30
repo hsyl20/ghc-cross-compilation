@@ -194,10 +194,14 @@ multi-package before we could get this change integrated upstream.
 Make GHC multi-target
 ---------------------
 
-GHC should be able to produce code objects for at least 2 targets:
+GHC should be able to produce code objects for several targets:
 
-- its own host platform and compiler way (for plugins): ``-target self``
-- one or more other targets
+- (not available in stage 1 because of ABI mismatch) its own host platform and
+  compiler way (for plugins): ``-target self``
+- its own host platform: ``-target host``. It targets the same platform as
+  ``-target self`` by without the constraint of being linkable with GHC. Other
+  options could be applied (``-debug``,  ``-profiling``, etc.).
+- several other targets
 
 We need a way to configure two external toolchain information (gcc, llvm, as,
 ld, ar, strip, etc.): one for GHC plugins and another for the current target.
@@ -426,20 +430,63 @@ Now how would we execute TH code:
      interpreter itself).
 
 
-Cabal: Setup.hs
----------------
+Cabal: ``Setup.hs``
+-------------------
 
 Cabal packages are built by a ``Setup.hs`` program running on the compiler host.
 Most of them use the same "Simple" one but other use custom ``Setup.hs``, with
 dependencies specified in ``.cabal`` files.
 
-Once GHC becomes multi-target, Stack and cabal-install could use ``-target self``
-to produce the actual program for the compiler host. It would ensure that the
-compiler and ``Setup`` would use the same boot libraries.
+Once GHC becomes multi-target, Stack and cabal-install could use ``-target
+self`` (for stage >= 2 compilers) or ``-target host`` (for any stage compiler,
+including stage 1) to produce the actual program for the compiler host. It would
+ensure that ``Setup`` programs can always be built and run on the host.
+
+* ``-target self``: when it is available (stage >= 2) it allows the use of the
+  same boot libraries as the compiler itself
+
+* ``-target host``: should always be available. However with stage 1 compilers
+  we can't reuse self packages (boot libraries of the compilers and the compiler
+  package itself) because of ABI mismatch. Hence a second set of boot libraries
+  need to be built for the host just as if we were building a stage 2
+  compiler (hence it may require reinstallable boot libraries).
 
 Currently cross-compilers such as GHCJS and Asterius use two GHC compilers: one
 for the target and another for the host (used to build the former GHC, the
 compiler plugins and ``Setup.hs`` programs).
+
+``Setup.hs`` should be a regular Cabal executable component built like any
+other.  Cabal now is well established in its notion of distinct components
+per-package that interact just through their dependencies. What makes
+``Setup.hs`` component different is:
+
+* the fact that other components of the package have a "this is my
+  Setup.hs"-type dependency on it
+* the fact that it is built to be executed on the compiler host, not on the
+  actual target.
+
+More importantly than nicely reducing special-cases, this cleanup segues between
+the rest of this section and the next.
+
+
+Cabal should understand cross compilation and bootstrapping
+-----------------------------------------------------------
+
+Cabal needs to know the target and the dependencies of each component it builds,
+including ``Setup.hs`` components as per the previous section.
+
+cabal-install's solver already does have some understanding of disjoint
+dependency graphs (via `qualified goals
+<https://www.well-typed.com/blog/2015/03/qualified-goals/>`_). E.g. when trying
+to build package ``foo`` which depends on ``base``, it tries to find a ``base``
+package for ``base`` and another for ``foo.setup.base`` (they may not be the
+same).
+We would have to extend this mechanism to consider target and stage information
+(as discussed in the context of Hadrian above).
+
+This would be a *huge* step towards the goal of GHC not needing bespoke logic in
+its build system.
+
 
 Cabal: ``configure`` build-type
 -------------------------------
@@ -456,6 +503,11 @@ Portable packages (in particular boot libraries) shouldn't use this. They might
 call ``configure`` in custom ``Setup.hs`` on Unix-like platforms though, passing it
 flags to specify the actual target if necessary.
 
+But for sake of unix-only packages it wouldn't be hard to teach Cabal to use
+`--build`, `--host`, and other Autotools conventions. Autotools, after all, may
+be nasty and crude, but does actually have not-so-bad support for cross
+compilation thanks to GNU trying to sneak onto all manner of proprietary Unices
+in the 1990s.
 
 Remove platform CPP
 -------------------
