@@ -471,7 +471,7 @@ Cabal should understand cross compilation and bootstrapping.
    disposal and their bootstrapping relation.
 
    * While GHC and Clang are multi-target, other tools like GCC are not so Cabal
-     would already need a nothing of per-stage tools. It's not that much harder
+     would already need a notion of per-stage tools. It's not that much harder
      to also make that available for GHC itself.
 
    * When using a stage 1 compiler that doesn't provide ``-target self``, one
