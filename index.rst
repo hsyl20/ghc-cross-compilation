@@ -438,7 +438,7 @@ Cabal should understand cross compilation and bootstrapping.
 #. ``Setup.hs``
 
    Cabal packages are built by a ``Setup.hs`` program running on the compiler
-   host. Most of them use the same "Simple" one but other use custom
+   host. Most of them use the same "Simple" one but some others use custom
    ``Setup.hs``, with dependencies specified in ``.cabal`` files.
 
    Once GHC becomes multi-target, Stack and cabal-install could use ``-target
