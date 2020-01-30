@@ -455,8 +455,8 @@ Cabal should understand cross compilation and bootstrapping.
      the compiler package itself) because of ABI mismatch. There two solutions:
       
      * a second set of boot libraries need to be built for the host just as if
-        we were building a stage 2 compiler (hence it may require reinstallable
-        boot libraries)
+       we were building a stage 2 compiler (hence it may require reinstallable
+       boot libraries)
 
      * Cabal should be aware of the bootstrapping relationships between
        toolchains (next item).
