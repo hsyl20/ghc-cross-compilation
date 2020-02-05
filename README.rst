@@ -222,6 +222,8 @@ multiple targets in a single GHC session. In particular it can't build plugins
 (``-target self``) and actual code objects for the real target in the same session
 yet. We need to make GHC multi-package to support this.
 
+Related: `#11470 <https://gitlab.haskell.org/ghc/ghc/issues/11470>`_
+
 Make GHC multi-package
 ----------------------
 
@@ -477,6 +479,8 @@ Cabal should understand cross compilation and bootstrapping.
    * When using a stage 1 compiler that doesn't provide ``-target self``, one
      has the option to instead use the previous stage's compiler to build
      plugins, which will make the ABI match.
+
+   Related: `#11378 <https://gitlab.haskell.org/ghc/ghc/issues/11378>`_
 
 #. ``Setup.hs`` should be a regular Cabal executable component built like any
    other.  Cabal now is well established in its notion of distinct components
