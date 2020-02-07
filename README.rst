@@ -334,6 +334,13 @@ There are several subtasks to perform before we can achieve this goal:
    great to be able to build GHC using `haskell.nix
    <https://input-output-hk.github.io/haskell.nix/>`_ to benefit from it.
 
+#. Ancillary tools outside of the combined mode
+
+   There's lots of low hanging fruit. @angerman Fixed some silly make rules for ``hsc2hs`` and ``unlit`` in the past.
+   Haddock is confused between its rigid GHC API version bound and its conventional laxed constraints on the GHC version used to build it.
+   
+   Related: `Haddock #1129 <https://github.com/haskell/haddock/pull/1129/files>`_ fixing stage 1 build.
+
 Blend ways into targets
 -----------------------
 
