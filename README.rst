@@ -178,7 +178,7 @@ support plugins while its target is JavaScript code:
 The task is to make GHC aware of at least two databases: plugin and 1 per
 target. Loading a plugin would be done via the plugin database and plugin would
 always be executed with the internal interpreter
-(`GHC ticket <https://gitlab.haskell.org/ghc/ghc/-/issues/14335>`).
+(`GHC ticket <https://gitlab.haskell.org/ghc/ghc/-/issues/14335>`_).
 
 Plugins still won't work for stage 1 compilers because of ABI mismatch: the
 stage 0 compiler may produce code objects for the stage 1 compiler that are not
